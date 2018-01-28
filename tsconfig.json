@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "outDir": "app/js",
+        "noEmitOnError": true ,
+        "noImplicitAny": true,  //Not defined variabel without type as type "any
+        "removeComments": true,   //remove all comments 
+        "module": "system", //modo de deploy AMD, comom js, system deixa o codigo mais clena.
+        "strictNullChecks": true, //no permite the value null or underfined 
+        "experimentalDecorators": true // Enable decorators
+    },
+    "include": [
+        "app/ts/**/*"
+    ]
+}
