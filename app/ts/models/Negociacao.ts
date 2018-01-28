@@ -25,3 +25,7 @@ export class Negociacao {
         return this.quantidade * this.valor;
     }
 }
+
+/*
+colocando um novo commit para test.
+*/
