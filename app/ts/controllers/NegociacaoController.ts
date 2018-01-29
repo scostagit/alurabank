@@ -1,12 +1,7 @@
-import { logarTempoDeExecucao, domInject } from '../helpers/decorators/index';
-
-// import {Negociacao} from 'models/Negociacao';
-// import { Negociacoes} from 'models/Negociacoes';
-// import { NegociacoesView} from 'views/NegociacoesView';
-// import { MensagemView} from 'views/MensagemView';
-
+import { logarTempoDeExecucao, domInject, throttle } from '../helpers/decorators/index';
 import { NegociacoesView, MensagemView } from '../views/index';
-import { Negociacoes, Negociacao } from '../models/index';
+import { Negociacoes, Negociacao, NegociacaoParcial } from '../models/index';
+import { NegociacaoService } from '../services/index';
 
 
 export class NegociacaoController{
@@ -30,6 +25,8 @@ export class NegociacaoController{
     private _negociacoesView = new NegociacoesView('#negociacoesView');
     private _mensagemView = new MensagemView('#mensagemView');
     private _m = new Negociacao(new Date(),1,1);
+       // mais uma propriedade da classe!
+     private _service = new NegociacaoService();
   
      
    //Element is type from HMTL page. Element is a generic type. it does not have properties
@@ -50,9 +47,11 @@ export class NegociacaoController{
     }
 
     // @logarTempoDeExecucao(true)
-    adiciona(event:Event){
+    // adiciona(event:Event){
+    @throttle()
+    adiciona(){
         const t1 = performance.now();   
-         event.preventDefault();
+        //  event.preventDefault();
 
         let data = new Date(this._inputData.val().replace(/-/g, ','));
 
@@ -93,6 +92,41 @@ export class NegociacaoController{
     private _ehDiaUtil(data: Date) {
 
         return data.getDay() != DiaDaSemana.Sabado && data.getDay() != DiaDaSemana.Domingo;
+    }
+
+    @throttle()
+    importarDados() {
+
+        // function isOk(res: Response) {
+
+        //     if(res.ok) {
+        //         return res;
+        //     } else {
+        //         throw new Error(res.statusText);
+        //     }
+        // }
+
+        // fetch('http://localhost:8080/dados')
+        //     .then(res => isOK(res))
+        //     .then(res => res.json())
+        //     .then((dados: NegociacaoParcial[]) => {
+        //         dados
+        //             .map(dado => new Negociacao(new Date(), dado.vezes, dado.montante))
+        //             .forEach(negociacao => this._negociacoes.adiciona(negociacao));
+        //         this._negociacoesView.update(this._negociacoes);
+        //     })
+        //     .catch(err => console.log(err.message));       
+        
+        this._service
+            .obterNegociacoes(res => {
+                if(res.ok) return res;
+                throw new Error(res.statusText);
+            })
+            .then(negociacoes => {
+                negociacoes.forEach(negociacao => 
+                    this._negociacoes.adiciona(negociacao));
+                this._negociacoesView.update(this._negociacoes);
+            });
     }
 }
 
