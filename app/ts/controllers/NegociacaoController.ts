@@ -2,7 +2,7 @@ import { logarTempoDeExecucao, domInject, throttle } from '../helpers/decorators
 import { NegociacoesView, MensagemView } from '../views/index';
 import { Negociacoes, Negociacao, NegociacaoParcial } from '../models/index';
 import { NegociacaoService } from '../services/index';
-
+import { imprime } from '../helpers/index';
 
 export class NegociacaoController{
 
@@ -83,7 +83,9 @@ export class NegociacaoController{
         });*/        
        
         this._negociacoesView.update(this._negociacoes);
-        this._mensagemView.update('Negociação adicionada com sucesso');        
+        this._mensagemView.update('Negociação adicionada com sucesso');       
+        
+        imprime(negociacao, this._negociacoes);
 
         const t2 = performance.now();
         console.log(`Tempo de execução do método adiciona(): ${(t2 - t1)/1000} segundos`);
@@ -94,39 +96,84 @@ export class NegociacaoController{
         return data.getDay() != DiaDaSemana.Sabado && data.getDay() != DiaDaSemana.Domingo;
     }
 
-    @throttle()
-    importarDados() {
+//     @throttle()
+//     importarDados() {
 
-        // function isOk(res: Response) {
+//         // function isOk(res: Response) {
 
-        //     if(res.ok) {
-        //         return res;
-        //     } else {
-        //         throw new Error(res.statusText);
-        //     }
-        // }
+//         //     if(res.ok) {
+//         //         return res;
+//         //     } else {
+//         //         throw new Error(res.statusText);
+//         //     }
+//         // }
 
-        // fetch('http://localhost:8080/dados')
-        //     .then(res => isOK(res))
-        //     .then(res => res.json())
-        //     .then((dados: NegociacaoParcial[]) => {
-        //         dados
-        //             .map(dado => new Negociacao(new Date(), dado.vezes, dado.montante))
-        //             .forEach(negociacao => this._negociacoes.adiciona(negociacao));
-        //         this._negociacoesView.update(this._negociacoes);
-        //     })
-        //     .catch(err => console.log(err.message));       
+//         // fetch('http://localhost:8080/dados')
+//         //     .then(res => isOK(res))
+//         //     .then(res => res.json())
+//         //     .then((dados: NegociacaoParcial[]) => {
+//         //         dados
+//         //             .map(dado => new Negociacao(new Date(), dado.vezes, dado.montante))
+//         //             .forEach(negociacao => this._negociacoes.adiciona(negociacao));
+//         //         this._negociacoesView.update(this._negociacoes);
+//         //     })
+//         //     .catch(err => console.log(err.message));       
         
-        this._service
-            .obterNegociacoes(res => {
-                if(res.ok) return res;
-                throw new Error(res.statusText);
-            })
-            .then(negociacoes => {
-                negociacoes.forEach(negociacao => 
-                    this._negociacoes.adiciona(negociacao));
-                this._negociacoesView.update(this._negociacoes);
-            });
+//         this._service
+//             .obterNegociacoes(res => {
+//                 if(res.ok) return res;
+//                 throw new Error(res.statusText);
+//             })
+//             .then(negociacoesParaImportar => {
+
+//                 const negociacoesJaImportadas = this._negociacoes.lista();
+
+//                 negociacoesParaImportar
+//                     .filter(negociacao => 
+//                         !negociacoesJaImportadas.some(jaImportada => 
+//                             negociacao.ehIgual(jaImportada)))
+//                     .forEach(negociacao => 
+//                     this._negociacoes.adiciona(negociacao));
+
+//                 this._negociacoesView.update(this._negociacoes);
+//             })
+//             .catch(err => {
+//                 this._mensagemView.update(err);
+//            });
+//     }
+// }
+
+@throttle()
+async importarDados() {
+    try {
+        // usou await antes da chamada de this.service.obterNegociacoes()
+          //awita: quando esse codigo e executado ele e ritarado do file de execucao do javascript e 
+          //posto no limbo. quando recebe o retorno ele executado o metodo novamente com o retorno 
+          //do metodo sem a necissade do .then da promisse.
+            const negociacoesParaImportar = await this._service 
+                .obterNegociacoes(res => {
+
+                    if(res.ok) {
+                        return res;
+                    } else {
+                        throw new Error(res.statusText);
+                    }
+                });
+
+            const negociacoesJaImportadas = this._negociacoes.lista();
+
+            negociacoesParaImportar
+                .filter(negociacao => 
+                    !negociacoesJaImportadas.some(jaImportada => 
+                        negociacao.ehIgual(jaImportada)))
+                .forEach(negociacao => 
+                this._negociacoes.adiciona(negociacao));
+
+            this._negociacoesView.update(this._negociacoes);
+
+        } catch(err) {
+            this._mensagemView.update(err.message);
+        }
     }
 }
 
